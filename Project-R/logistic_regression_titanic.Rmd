@@ -1,0 +1,180 @@
+---
+title: "Logistic Regression Bootcamp Homework"
+author: "Nirucha P"
+date: "2024-01-03"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Assignment
+1. Use the titanic dataset to create Logistic Regression Model.
+2. This model is used to predict the probability of survival of people in Titanic boats.
+3. Export this document to pdf with R Markdown.
+
+# Install packaged
+
+```{r}
+library(tidyverse)
+library(titanic)
+```
+
+# Load raw data
+
+```{r}
+data("titanic_train")
+glimpse(titanic_train)
+```
+
+```{r,  echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+library(knitr)
+
+df <- data.frame(Variable = c("PassengerId", "Survived","Pclass", 
+                              "Name", "Sex", "Age",
+                              "SibSp", "Parch", "Ticket",
+                              "Fare", "Cabin", "Embarked "),
+                 Definition = c("The unique number of passengers",
+                                "The probability of survival",
+                                "Ticket class",
+                                "The fullname of passengers",
+                                "Gender","Age in years",
+                                "Number of siblings / spouses aboard the Titanic",
+                                "Number of parents / children aboard the Titanic",
+                                "Ticket number",
+                                "Passenger fare",
+                                "Cabin number",
+                                "Port of Embarkation"),
+                 Key = c("","0 = No, 1 = Yes","1 = Upper, 2 = Middle, 3 = Lower",
+                                "","","",
+                                "","","",
+                                "","","C = Cherbourg, Q = Queenstown, S = Southampton"))
+
+kable(df, "pipe", caption = "Explain variables in titanic dataset")
+```
+
+# Data Cleaning
+
+1. Check some missing values in the diamonds dataset.
+
+```{r}
+if(sum(is.na(titanic_train)) > 0){
+  print("This dataset has some missing values.")
+  
+} else{
+  print("This dataset doesn't have any missing values.")
+}
+```
+2. Drop NA (missing values).
+
+```{r}
+titanic_train <- na.omit(titanic_train)
+cat("Number of rows after cleaned :",nrow(titanic_train))
+```
+# Prepare Data
+
+1. Change column Sex from string to factor.
+
+```{r}
+titanic_train$Sex  <- factor(titanic_train$Sex, 
+                             level = c("male", "female"), 
+                             label = c(0, 1))
+glimpse(titanic_train)
+```
+
+2. Split the data into two parts with a random sampling method.
+We use 70% for the training set and 30% for the testing set.
+
+```{r}
+set.seed(95)
+n <- nrow(titanic_train)
+id <- sample(1:n, size = n*0.7)
+train_data <- titanic_train[id, ]
+test_data <- titanic_train[-id, ]
+
+cat("The training set has",nrow(train_data),", and the testing set has",nrow(test_data), "rows.")
+```
+# Create Train and Test Model
+
+We use the Pclass, Age, and Sex columns to predict the probability of survival (Survived Column).
+
+**Train Model**
+```{r}
+# Calculate the line of best fit a logistic regression
+logit_model <- glm(Survived ~ Pclass + Age + Sex, 
+                   data = train_data, 
+                   family = "binomial")
+
+# Predict with the training set
+train_data$prob_survived <- predict(logit_model, type = "response")
+
+# Cut off at 0.5 of probability
+train_data$pred_survived <- ifelse(train_data$prob_survived >= 0.5, 1, 0)
+
+train_data %>%
+  select(Pclass, Age, Sex, pred_survived) %>%
+  head(5)
+```
+
+**Test Model**
+```{r}
+# Predict with the testing set
+test_data$prob_survived <- predict(logit_model, newdata = test_data, type = "response")
+
+# Cut off at 0.5 of probability
+test_data$pred_survived <- ifelse(test_data$prob_survived >= 0.5, 1, 0)
+
+test_data %>%
+  select(Pclass, Age, Sex, pred_survived) %>%
+  head(5)
+```
+
+# Model Evaluation
+
+Calculate the average accuracy of the train and test models to determine whether the generated model is overfitting or not.
+```{r}
+# Train Model
+avg_acc_train <- train_data$Survived == train_data$pred_survived
+cat("Average accuracy of the train model :", mean(avg_acc_train))
+
+# Test Model
+avg_acc_test <- test_data$Survived == test_data$pred_survived
+cat("Average accuracy of the test model :", mean(avg_acc_test))
+```
+We observed that the average accuracy values of the train and test models are close to each other. Conclude that this logistic regression model does not overfit.
+
+**Confusion Matrix**
+
+Train set metrics calculation
+```{r}
+conM_train <- table(train_data$pred_survived, train_data$Survived, 
+              dnn = c("Predicted", "Actual"))
+
+acc_train <- (conM_train[1, 1] + conM_train[2, 2]) / sum(conM_train)
+prec_train <- conM_train[2, 2] / (conM_train[2, 1] + conM_train[2, 2])
+rec_train <- conM_train[2, 2] / (conM_train[1, 2] + conM_train[2, 2])
+f1_train <- 2*((prec_train * rec_train) / (prec_train + rec_train))
+```
+
+Test set metrics calculation
+
+```{r}
+conM_test <- table(test_data$pred_survived, test_data$Survived, 
+              dnn = c("Predicted", "Actual"))
+
+acc_test <- (conM_test[1, 1] + conM_test[2, 2]) / sum(conM_test)
+prec_test <- conM_test[2, 2] / (conM_test[2, 1] + conM_test[2, 2])
+rec_test <- conM_test[2, 2] / (conM_test[1, 2] + conM_test[2, 2])
+f1_test <- 2*((prec_test * rec_test) / (prec_test + rec_test))
+```
+
+
+```{r,  echo=FALSE, message=FALSE, warning=FALSE}
+
+metrics <- data.frame("Accuracy" = c(acc_train,acc_test),
+                      "Precision" = c(prec_train,prec_test),
+                      "Recall" = c(rec_train,rec_test),
+                      "F1 score" = c(f1_train,f1_test))
+row.names(metrics) <- c("Train set", "Test set")
+
+kable(metrics, caption = "Confusion Matrix comparison", format = "pipe")
+```
