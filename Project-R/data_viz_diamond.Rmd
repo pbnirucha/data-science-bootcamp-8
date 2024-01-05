@@ -1,0 +1,231 @@
+---
+title: "Data Visualization Bootcamp Homework"
+author: "Nirucha P"
+date: "2023-12-23"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Assignment
+1. Use the diamonds dataset to plot and explain the charts.
+2. Use the ggplot2 (or tidyverse) library in R Language.
+3. Export this document to pdf with R Markdown.
+
+# Install packaged
+
+```{r}
+library(tidyverse)
+```
+# Load clean data
+```{r}
+data("diamonds")
+str(diamonds)
+```
+
+# Prepare data
+
+Check some missing values in the diamonds dataset.
+
+```{r}
+if(sum(is.na(diamonds)) > 0){
+  print("This dataset has some missing values.")
+  
+} else{
+  print("This dataset doesn't have any missing values.")
+}
+
+```
+
+# Plot and explain the charts
+
+**[1] What is the price distribution of diamonds?**
+
+```{r}
+ggplot(data = diamonds,
+       mapping = aes(x = price)) +
+  geom_histogram(bins = 8, fill = "skyblue", col = "black", alpha = 0.8) +
+  theme_minimal() +
+  labs(title = "Histogram - The price distribution of diamonds")
+
+ggplot(diamonds, aes(x = carat, y = price)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.8) +
+  theme_minimal() +
+  labs(title = "Boxplot - The price distribution of diamonds by Carat",
+       x = "Carat",
+       y = "Price USD")
+
+summary(diamonds$price)
+```
+
+The price distribution of diamonds is right-skewed, with a median price of around 2,400 USD. Boxplot shows the value of the outlier at the top.
+
+It shows that most diamond prices are below 5,000 USD.
+
+\pagebreak
+
+**[2] What is the most color of diamonds**
+
+```{r}
+ggplot(data = diamonds,
+       mapping = aes(x = color)) +
+  geom_bar(fill = "skyblue", alpha = 0.8) + 
+  geom_text(aes(label = ..count..), stat = "count", vjust = 1.5, colour = "black") +
+  theme_minimal() +
+  labs(title = "Number of diamonds by color")
+```
+
+The color of diamonds is separated into three groups (best to worst), as follows:
+
+1. Colorless : D, E, F
+2. Near Colorless : G, H (Typically look colorless to the naked eye)
+3. Near Colorless Slightly Tinted : I, J
+
+From the chart above, the number of diamonds with a color grade of G is the highest, and J is the lowest.
+
+\pagebreak
+
+**[3] What is the most clarity of diamonds?**
+
+```{r}
+ggplot(data = diamonds,
+       mapping = aes(x = clarity, fill = color)) +
+  geom_bar(alpha = 0.8) + 
+  theme_minimal() +
+  labs(title = "Number of diamonds by clarity")
+
+```
+
+Since diamonds are natural gemstones, it is simple to find impurities in diamonds. However, the clarity of a diamond affects its sparkle. 
+
+The order of clarity of diamonds is as follows (worst to best): 
+I1 < SI2 < SI1 < VS2 < VS1 < VVS2 < VVS1 < IF
+
+From the chart above, most diamonds found may be in the SI1 category (Slightly Included).
+
+\pagebreak
+
+**[4] What is the most cutting of diamonds?**
+
+```{r}
+ggplot(data = diamonds,
+       mapping = aes(x = cut)) +
+  geom_bar(fill= "skyblue", alpha = 0.8) + 
+  geom_text(aes(label = ..count..), stat = "count", vjust = 1.5, colour = "black") +
+  theme_minimal()  +
+  labs(title = "Number of diamonds by cut")
+
+```
+
+The process of diamond cutting is a factor that jewelers can control themselves because both the color and clarity of the diamonds occur naturally.
+From the chart above, the ideal level (the best of cutting) has the highest number of diamonds.
+
+\pagebreak
+
+**[5] What is the relationship between carat and price?**
+
+```{r}
+ggplot(diamonds, aes(x = carat, y = price, col = price)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(col = "deeppink") +
+  scale_color_gradient(low = "darkturquoise", high = "gold") +
+  theme_minimal() +
+  labs(title = "Relationship between Carat and Price",
+       x = "Carat",
+       y = "Price USD")
+
+cor(diamonds$carat, diamonds$price)
+
+```
+
+From the scatter plot and a correlation coefficient value of around 0.92, there is a correlation between carat and prices trending in the same direction and positively correlated. Therefore, it is possible that as the carat weight increases, there is a tendency for the price to increase as well.
+
+\pagebreak
+
+**[6] What is the relationship between carat and price, categorized by the clarity?**
+
+
+```{r}
+ggplot(diamonds, aes(x = carat, y = price, col=price)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(col = "deeppink") +
+  facet_wrap(~ clarity, ncol =4 ) +
+  scale_color_gradient(low = "darkturquoise", high = "gold") +
+  theme_minimal() +
+  labs(title = "Relationship between Carat and Price by clarity",
+       x = "Carat",
+       y = "Price USD")
+```
+
+From the above graph, in the relationship between carat and price, categorized by the clarity of the diamond, we can observe that for diamonds with IF clarity level, weighing 1 carat, the price is more than 15,000 USD. As the clarity level decreases, diamonds must weigh more than 1 carat to have a price exceeding 15,000 USD. Therefore, the clarity level of the diamond tends to higher prices.
+
+\pagebreak
+
+**[7] What is the median price of each diamond color in clarity is SI1, SI2?**
+
+
+```{r}
+diamonds %>%
+  filter(carat == 1, (clarity == "SI1" | clarity == "SI2")) %>%
+  group_by(color) %>%
+  summarise(med_price = median(price)) %>%
+  ggplot(aes(color,med_price))+
+  geom_col(fill = "skyblue", alpha = 0.8) +
+  geom_text(aes(label = med_price), vjust = 1.5, colour = "black") +
+  theme_minimal() +
+  labs(title = "The median price of each diamond color in clarity is SI1 and SI2",
+    x = "Color", 
+    y = "Median price")
+```
+
+From the above graph, in the case where diamonds weigh 1 carat and are in the clarity range of SI1 and SI2 (which is a relatively lower clarity level), it is found that the color of the diamonds affects the diamond's price.
+
+\pagebreak
+
+**[8] What is the median price of each diamond cut in color D and clarity is SI1, SI2**
+
+
+```{r}
+diamonds %>%
+  filter(color == "D", carat == 1, (clarity == "SI1" | clarity == "SI2")) %>%
+  group_by(cut) %>%
+  summarise(med_price = median(price)) %>%
+  ggplot(aes(cut,med_price))+
+  geom_col(fill = "skyblue", alpha = 0.8) +
+  geom_text(aes(label = med_price), vjust = 1.5, colour = "black") +
+  theme_minimal() +
+  labs(title = "The median price of each diamond cut in color D and clarity is SI1 and SI2",
+    x = "Cut", 
+    y = "Median price")
+```
+
+From the above graph, in the case where a diamond weighs 1 carat, has a color grade of D, and has clarity in the range of SI1 and SI2. It found that the diamond cut affects the diamond's price.
+
+# Conclusion
+
+From the diamonds dataset, we found that carat weight is a significant factor in the price of diamonds. In terms of color and clarity, that cannot be controlled, as diamonds are natural occurrences. However, in cases where diamonds have lower color grades or are in a clarity range with noticeable imperfections, diamond cutting is a factor that can enhance the price of the diamond, and this factor jewelers can control to manage the quality themselves.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
