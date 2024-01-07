@@ -2,7 +2,7 @@
 library(RPostgreSQL)
 library(tidyverse)
 
-filepath_ini <- "D:/learning/Data Rockie/basic_r/config/config.ini"
+filepath_ini <- "config/config.ini"
 ini_file <- read.ini(filepath_ini, encoding = getOption("encoding")) 
 
 conn <- dbConnect(PostgreSQL(), 
